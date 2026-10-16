@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mousetrap Car — Distance Math Explorer</title>
+<style>
+:root{font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Arial,sans-serif;color:#18283a;background:#f3f6fa}
+*{box-sizing:border-box}
+body{margin:0}
+.wrap{max-width:none;width:100%;margin:auto;padding:32px clamp(16px,2vw,36px) 55px}
+h1{font-size:clamp(26px,3.2vw,39px);margin:0 0 8px;letter-spacing:-.04em}
+.intro{color:#52677b;margin:0 0 24px;line-height:1.55}
+.layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:18px}
+.panel{background:#fff;border:1px solid #dde5ed;border-radius:17px;padding:22px;box-shadow:0 3px 16px #18345308}
+.controls{align-self:start;position:sticky;top:16px;max-height:calc(100vh - 32px);overflow-y:auto;overscroll-behavior:contain}
+.control{margin:26px 0}
+.control:first-of-type{margin-top:14px}
+.control .heading{display:flex;justify-content:space-between;gap:10px;font-weight:650;font-size:14px}
+.value{color:#087b99;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:#087b99;margin:13px 0 3px}
+.ends{display:flex;justify-content:space-between;font-size:12px;color:#8091a1}
+.small{font-size:13px;line-height:1.55;color:#627688}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 19px}
+.metric{padding:17px;background:#ecf7fa;border-radius:13px}
+.metric:nth-child(2){background:#f1f4fc}
+.metric span{color:#526c7d;font-size:13px}
+.metric strong{display:block;font-size:clamp(23px,3vw,34px);font-variant-numeric:tabular-nums;letter-spacing:-.035em;margin-top:5px}
+.steps{display:grid;gap:11px}
+.step{border:1px solid #e0e7ef;border-radius:13px;padding:17px 18px}
+.top{display:flex;align-items:center;gap:10px;font-weight:700}
+.num{display:grid;place-items:center;flex:none;width:28px;height:28px;border-radius:50%;color:#fff;background:#137c97;font-size:13px}
+.stepbody{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:18px;align-items:center;margin-top:10px}
+.formula{font-family:Cambria,Georgia,serif;font-size:clamp(19px,2.3vw,25px);margin:0 0 9px;color:#234058}
+.substitution{color:#4b6174;line-height:1.6;font-size:15px;font-variant-numeric:tabular-nums}
+.answer{font-size:18px;font-weight:750;color:#087b99;margin-top:5px}
+.arrow{text-align:center;font-size:19px;color:#9bb0bf;line-height:16px}
+.visualbox>div{min-width:0;width:100%}.visualbox{min-width:0;width:100%;overflow:hidden;background:#f8fbfd;border:1px solid #e3ebf1;border-radius:12px;padding:10px;min-height:140px;display:grid;place-items:center}
+.scroll-strip{overflow-x:auto;max-width:100%;width:100%;padding:8px 0 14px;scrollbar-width:thin}.scroll-strip svg{display:block;max-width:none}.vcaption{font-size:12px;color:#6d8090;text-align:center;margin-top:6px;line-height:1.4}
+.mini-svg{width:100%;max-width:250px;height:auto;display:block}
+.ratio-heading{font-size:20px;margin:0 0 7px}
+.ratio-math{font-size:clamp(19px,2.7vw,27px);font-family:Cambria,Georgia,serif;color:#234058;margin:16px 0}
+.ratio-visual{display:grid;gap:16px;margin:23px 0}
+.bar-label{display:flex;justify-content:space-between;font-size:14px;font-weight:650;margin-bottom:8px}
+.track{height:26px;border-radius:7px;background:#e8edf2;overflow:hidden}
+.fill{height:100%;border-radius:7px;transition:width .16s}
+.pulled{background:#e49a42}
+.traveled{background:#1685a2}
+.legend{font-size:13px;color:#6b7d8c}
+.ratio-big{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:15px;color:#4b6274;margin-top:16px}
+.ratio-big strong{font-size:31px;color:#087b99;font-variant-numeric:tabular-nums}
+.reset{border:1px solid #bed2dd;background:#f0f7f9;color:#086d87;border-radius:9px;padding:10px 15px;font-weight:700;cursor:pointer}
+.note{font-size:13px;line-height:1.65;color:#65798a;margin:15px 0 0}
+h2{font-size:21px;margin:0 0 12px}
+.unit-strip{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.unit-pill{padding:7px 9px;border-radius:999px;background:#dff2f8;color:#0b6f8d;font-size:12px;font-weight:700;border:1px solid #bddfea}
+.unit-fade{background:#eef4f7;color:#748694;border-color:#dde7ee}
+@keyframes orbitSpin{from{transform:rotate(0deg);transform-origin:50% 50%}to{transform:rotate(360deg);transform-origin:50% 50%}}
+.orbit{animation:orbitSpin 3s linear infinite;transform-origin:50% 50%}
+@media(max-width:940px){.controls{position:static;max-height:none;overflow:visible}.stepbody{grid-template-columns:1fr}.visualbox{order:-1}.layout{grid-template-columns:1fr}.summary{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.summary{grid-template-columns:1fr}.wrap{padding:18px 12px}.panel{padding:17px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>Mousetrap Car · Distance Math Explorer</h1>
+  <p class="intro">Change one design variable at a time and follow the math from the bail's movement to the distance traveled. This version focuses on equations, supported by simple visuals for each calculation step.</p>
+
+  <div class="layout">
+    <aside class="panel controls">
+      <h2>Design variables</h2>
+
+      <div class="control">
+        <div class="heading"><label for="bail">Bail length (L)</label><output class="value" id="bailV"></output></div>
+        <input id="bail" type="range" min="5" max="40" step="1" value="20">
+        <div class="ends"><span>5 cm</span><span>40 cm</span></div>
+      </div>
+
+      <div class="control">
+        <div class="heading"><label for="axle">Axle diameter (d)</label><output class="value" id="axleV"></output></div>
+        <input id="axle" type="range" min="0.5" max="10" step="0.5" value="5">
+        <div class="ends"><span>0.5 mm</span><span>10 mm</span></div>
+      </div>
+
+      <div class="control">
+        <div class="heading"><label for="wheel">Wheel diameter (D)</label><output class="value" id="wheelV"></output></div>
+        <input id="wheel" type="range" min="4" max="25" step="0.5" value="10">
+        <div class="ends"><span>4 cm</span><span>25 cm</span></div>
+      </div>
+
+      <button class="reset" id="reset">Reset values</button>
+      <p class="small">Fixed assumption: the bail swings through <b>180° = π radians</b>. All measurements are in centimeters.</p>
+    </aside>
+
+    <div>
+      <section class="panel">
+        <h2>From inputs to distance</h2>
+        <div class="summary">
+          <div class="metric"><span>String pulled (estimated)</span><strong id="pullTotal"></strong></div>
+          <div class="metric"><span>Ideal distance traveled</span><strong id="travelTotal"></strong></div>
+        </div>
+
+        <div class="steps">
+          <div class="step">
+            <div class="top"><span class="num">1</span>Estimate string pulled from bail-tip displacement</div>
+            <div class="stepbody">
+              <div>
+                <div class="formula">s = 2L × sin(θ ÷ 2)</div>
+                <div class="substitution" id="eq1"></div>
+                <div class="answer" id="ans1"></div>
+              </div>
+              <div>
+                <div class="visualbox"><div id="vis1"></div></div>
+                <div class="vcaption">The blue straight line connects the starting and ending tip positions (the chord), not the curved arc.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="arrow">↓</div>
+
+          <div class="step">
+            <div class="top"><span class="num">2</span>Calculate one turn of the axle</div>
+            <div class="stepbody">
+              <div>
+                <div class="formula">Cₐ = π × d</div>
+                <div class="substitution" id="eq2"></div>
+                <div class="answer" id="ans2"></div>
+              </div>
+              <div>
+                <div class="visualbox"><div id="vis2"></div></div>
+                <div class="vcaption">A full axle turn unwinds one axle circumference. Bigger axle = more string per turn.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="arrow">↓</div>
+
+          <div class="step">
+            <div class="top"><span class="num">3</span>Find the number of axle and wheel revolutions</div>
+            <div class="stepbody">
+              <div>
+                <div class="formula">N = s ÷ Cₐ</div>
+                <div class="substitution" id="eq3"></div>
+                <div class="answer" id="ans3"></div>
+              </div>
+              <div>
+                <div class="visualbox"><div id="vis3"></div></div>
+                <div class="vcaption">Each coil represents one revolution. Scroll horizontally to inspect all loops, even for very small axle diameters.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="arrow">↓</div>
+
+          <div class="step">
+            <div class="top"><span class="num">4</span>Calculate the distance of one wheel turn</div>
+            <div class="stepbody">
+              <div>
+                <div class="formula">Cᵥ = π × D</div>
+                <div class="substitution" id="eq4"></div>
+                <div class="answer" id="ans4"></div>
+              </div>
+              <div>
+                <div class="visualbox"><div id="vis4"></div></div>
+                <div class="vcaption">The straight blue line is one wheel circumference. Its length changes as the wheel diameter changes.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="arrow">↓</div>
+
+          <div class="step">
+            <div class="top"><span class="num">5</span>Calculate total distance</div>
+            <div class="stepbody">
+              <div>
+                <div class="formula">x = N × Cᵥ = s × (D ÷ d)</div>
+                <div class="substitution" id="eq5"></div>
+                <div class="answer" id="ans5"></div>
+              </div>
+              <div>
+                <div class="visualbox"><div id="vis5"></div></div>
+                <div class="vcaption">Each line represents one wheel circumference; the final partial line shows the fractional revolution. Scroll to inspect all units.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" style="margin-top:18px">
+        <h2 class="ratio-heading">String pull vs. car travel</h2>
+        <p class="small">The axle and wheel rotate together. For every centimeter of string unwound from the axle, the wheel rolls a longer distance based on the ratio of their diameters.</p>
+        <div class="ratio-math">Travel ÷ Pull = D ÷ d = <span id="ratioFormula"></span></div>
+        <div class="ratio-visual">
+          <div>
+            <div class="bar-label"><span>String pulled</span><span id="pullLabel"></span></div>
+            <div class="track"><div id="pullBar" class="fill pulled"></div></div>
+          </div>
+          <div>
+            <div class="bar-label"><span>Ideal distance traveled</span><span id="travelLabel"></span></div>
+            <div class="track"><div id="travelBar" class="fill traveled"></div></div>
+          </div>
+        </div>
+        <div class="legend">Both bars use the same scale: the longer bar is always the full width, and the shorter bar shows its proportional length.</div>
+        <div class="ratio-big"><strong id="ratioLarge"></strong><span>cm traveled for every 1 cm of string pulled</span></div>
+        <p class="note">A larger wheel diameter increases the distance multiplier; a larger axle diameter decreases it. Bail length changes how much string is pulled, but not the wheel-to-axle multiplier.</p>
+      </section>
+    </div>
+  </div>
+
+  <p class="note"><b>Teaching model:</b> This model now approximates string pulled using the straight-line displacement (chord) of the bail tip: s = 2L sin(θ/2). For a 180° swing, s = 2L. Actual string payout is the change in the string's length between the bail tip and axle, which depends on the mounting geometry; it is not necessarily equal to the bail-tip displacement. Actual car travel also depends on grip, friction, spring force and momentum. Here, “distance traveled” means ideal rolling distance without slipping, not a guaranteed experimental result.</p>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const f=(n,d=2)=>Number(n).toLocaleString('en-US',{maximumFractionDigits:d});
+const map=(value,inMin,inMax,outMin,outMax)=>outMin+((value-inMin)/(inMax-inMin))*(outMax-outMin);
+
+function bailVisual(L){
+  const r=map(L,5,40,35,84);
+  const cx=120, cy=111;
+  const left=cx-r, right=cx+r;
+  return `
+  <svg class="mini-svg" viewBox="0 0 240 150" aria-label="Bail tip straight-line displacement">
+    <path d="M ${right} ${cy} A ${r} ${r} 0 0 0 ${left} ${cy}" fill="none" stroke="#afcbdc" stroke-width="2" stroke-dasharray="5 5"/>
+    <line x1="${cx}" y1="${cy}" x2="${right}" y2="${cy}" stroke="#15798d" stroke-width="4" stroke-linecap="round"/>
+    <line x1="${cx}" y1="${cy}" x2="${left}" y2="${cy}" stroke="#98adba" stroke-width="4" stroke-linecap="round" stroke-dasharray="5 5"/>
+    <line x1="${left}" y1="${cy+14}" x2="${right}" y2="${cy+14}" stroke="#e49a42" stroke-width="4" stroke-linecap="round"/>
+    <path d="M${left+7} ${cy+10}L${left} ${cy+14}L${left+7} ${cy+18}M${right-7} ${cy+10}L${right} ${cy+14}L${right-7} ${cy+18}" stroke="#e49a42" stroke-width="2" fill="none"/>
+    <circle cx="${cx}" cy="${cy}" r="6" fill="#2d3d49" stroke="#f2c15e" stroke-width="2"/>
+    <circle cx="${right}" cy="${cy}" r="5" fill="#15798d"/>
+    <circle cx="${left}" cy="${cy}" r="5" fill="#98adba"/>
+    <text x="120" y="23" text-anchor="middle" fill="#466678" font-size="13">180° swing · dashed curve is not counted</text>
+    <text x="120" y="48" text-anchor="middle" fill="#bd7924" font-size="14" font-weight="700">Straight-line displacement = 2L</text>
+    <text x="120" y="148" text-anchor="middle" fill="#087b99" font-size="13" font-weight="700">L = ${f(L,0)} cm · chord = ${f(2*L,0)} cm</text>
+  </svg>`;
+}
+
+function axleVisual(d,ca){
+  const r=map(d,0.05,1,10,44);
+  const cx=120, cy=70;
+  return `
+  <svg class="mini-svg" viewBox="0 0 240 140" aria-label="Axle diameter visual">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="#ffffff" stroke="#8f47c9" stroke-width="6"/>
+    <line x1="${cx}" y1="${cy-r}" x2="${cx}" y2="${cy+r}" stroke="#8f47c9" stroke-width="3" marker-start="url(#m1)" marker-end="url(#m1)"/>
+    <defs><marker id="m1" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 5 L 10 0 L 10 10 z" fill="#8f47c9"/></marker></defs>
+    <text x="120" y="28" text-anchor="middle" fill="#5e6f7a" font-size="14">Axle diameter</text>
+    <text x="120" y="126" text-anchor="middle" fill="#087b99" font-size="14" font-weight="700">d = ${f(d*10,1)} mm → Cₐ = ${f(ca,2)} cm</text>
+  </svg>`;
+}
+
+function spiralVisual(n){
+  // A full loop is rendered for every completed revolution; a final
+  // fractional loop accurately represents the remaining part of a turn.
+  const turns=Math.floor(n+1e-9), partial=Math.max(0,n-turns);
+  const pxPerTurn=17, width=Math.max(250,48+n*pxPerTurn+30);
+  const samples=Math.ceil(n*14);
+  let path='';
+  for(let i=0;i<=samples;i++){
+    const t=n*i/samples;
+    const x=25+t*pxPerTurn;
+    const y=66-25*Math.sin(t*2*Math.PI);
+    path+=(i?'L':'M')+x.toFixed(2)+','+y.toFixed(2)+' ';
+  }
+  return `<div style="width:100%">
+    <div class="vcaption">${f(turns,0)} complete loops${partial>.0001?' + '+f(partial,2)+' partial loop':''}</div>
+    <div class="scroll-strip"><svg width="${width}" height="115" viewBox="0 0 ${width} 115" role="img" aria-label="${f(n,2)} axle loops">
+      <line x1="25" y1="66" x2="${25+n*pxPerTurn}" y2="66" stroke="#c7b1e1" stroke-width="2" stroke-dasharray="4 5"/>
+      <path d="${path}" fill="none" stroke="#8f47c9" stroke-width="2.5"/>
+      <text x="25" y="17" font-size="12" fill="#69788a">Start</text>
+      ${Array.from({length:Math.floor(n/5)},(_,i)=>`<g><line x1="${25+(i+1)*5*pxPerTurn}" y1="34" x2="${25+(i+1)*5*pxPerTurn}" y2="94" stroke="#a28abf" stroke-width="1" stroke-dasharray="3 4"/><text x="${25+(i+1)*5*pxPerTurn}" y="20" text-anchor="middle" font-size="12" font-weight="700" fill="#67458d">${(i+1)*5}</text></g>`).join('')}
+      <text x="${25+n*pxPerTurn}" y="104" text-anchor="end" font-size="12" fill="#69788a">End</text>
+    </svg></div></div>`;
+}
+
+function wheelVisual(D,cw){
+  const len=map(cw,Math.PI*4,Math.PI*25,70,250);
+  const radius=map(D,4,25,10,34);
+  const width=Math.max(280, len+50);
+  const x1=16, x2=16+len;
+  return `<div style="width:100%">
+    <div class="scroll-strip"><svg width="${width}" height="150" viewBox="0 0 ${width} 150" role="img" aria-label="Wheel size and one wheel circumference represented by a circle and a straight line">
+      <text x="${width/2}" y="20" text-anchor="middle" fill="#5e6f7a" font-size="14">Wheel size and one wheel circumference</text>
+      <circle cx="${x1+radius}" cy="48" r="${radius}" stroke="#1685a2" stroke-width="3" fill="#e8f5f9"/>
+      <text x="${x1+radius*2+10}" y="52" font-size="11" fill="#526c7d">Wheel</text>
+      <line x1="${x1}" y1="102" x2="${x2}" y2="102" stroke="#1685a2" stroke-width="6" stroke-linecap="round"/>
+      <line x1="${x1}" y1="93" x2="${x1}" y2="112" stroke="#547b90" stroke-width="2"/>
+      <line x1="${x2}" y1="93" x2="${x2}" y2="112" stroke="#547b90" stroke-width="2"/>
+      <text x="${(x1+x2)/2}" y="133" text-anchor="middle" fill="#087b99" font-size="14" font-weight="700">Cᵥ = ${f(cw,2)} cm</text>
+    </svg></div>
+  </div>`;
+}
+
+function distanceVisual(n,cw,x,D){
+  // One line per actual revolution (plus a proportional final partial line).
+  // The horizontally scrollable canvas makes high revolution counts legible.
+  const full=Math.floor(n+1e-9), part=Math.max(0,n-full);
+  const count=full+(part>1e-8?1:0);
+  const cell=78, gap=8, pad=12, lineMax=58;
+  const width=Math.max(260,pad*2+count*(cell+gap));
+  const wheelRadius=map(D,4,25,10,25);
+  let units='';
+  for(let i=0;i<count;i++){
+    const fraction=i<full?1:part;
+    const len=lineMax*fraction;
+    const x0=pad+i*(cell+gap);
+    units+=`<text x="${x0+cell/2}" y="23" text-anchor="middle" font-size="12" fill="#234058">${f(cw*fraction,2)} cm</text>`;
+    units+=`<line x1="${x0+10}" y1="49" x2="${x0+10+len}" y2="49" stroke="#1685a2" stroke-width="5" stroke-linecap="round"/>`;
+    units+=`<text x="${x0+cell/2}" y="76" text-anchor="middle" font-size="11" fill="#667d8c">${i+1}${fraction<1?' (partial)':''}</text>`;
+  }
+  return `<div style="width:100%">
+    <div class="vcaption">${f(full,0)} full circumferences${part>1e-8?' + '+f(part*100,1)+'% of one':''}</div>
+    <div class="scroll-strip"><svg width="${width}" height="140" viewBox="0 0 ${width} 140" role="img" aria-label="${count} wheel circumference units, including partial turns">
+      <circle cx="${pad+24}" cy="${wheelRadius+3}" r="${wheelRadius}" stroke="#1685a2" stroke-width="3" fill="#e8f5f9"/>
+      <text x="${pad+30+wheelRadius}" y="${wheelRadius+4}" font-size="11" fill="#526c7d">Wheel</text>
+      <g transform="translate(0 54)">${units}</g>
+    </svg></div>
+    <div class="vcaption">Total: ${f(x,2)} cm (${f(x/30.48,2)} ft)</div>
+  </div>`;
+}
+
+function update(){
+  const L=+$('bail').value;
+  const D=+$('wheel').value;
+  const axleMm=+$('axle').value;
+  const d=axleMm/10;
+  const theta=Math.PI;
+  const s=2*L*Math.sin(theta/2);
+  const ca=Math.PI*d;
+  const n=s/ca;
+  const cw=Math.PI*D;
+  const x=n*cw;
+  const ratio=D/d;
+
+  $('bailV').textContent=f(L,0)+' cm ('+f(L/2.54,2)+' in)';
+  $('axleV').textContent=f(axleMm,1)+' mm ('+f(axleMm/25.4,3)+' in)';
+  $('wheelV').textContent=f(D,1)+' cm ('+f(D/2.54,2)+' in)';
+  $('pullTotal').textContent=f(s,2)+' cm';
+  $('travelTotal').innerHTML=f(x/100,2)+' m <span style="display:block;font-size:0.54em;color:#526c7d;margin-top:3px">('+f(x/30.48,2)+' ft)</span>';
+
+  $('eq1').textContent=`2 × ${f(L,1)} cm × sin(180° ÷ 2) = 2 × ${f(L,1)} cm × 1`;
+  $('ans1').textContent=`s = ${f(s,2)} cm`;
+  $('eq2').textContent=`π × ${f(axleMm,1)} mm ÷ 10 = π × ${f(d,2)} cm`;
+  $('ans2').textContent=`Cₐ = ${f(ca,3)} cm per revolution`;
+  $('eq3').textContent=`${f(s,2)} cm ÷ ${f(ca,3)} cm/rev`;
+  $('ans3').textContent=`N = ${f(n,2)} revolutions`;
+  $('eq4').textContent=`π × ${f(D,1)} cm`;
+  $('ans4').textContent=`Cᵥ = ${f(cw,3)} cm per revolution`;
+  $('eq5').textContent=`${f(n,2)} rev × ${f(cw,3)} cm/rev`;
+  $('ans5').textContent=`x = ${f(x,2)} cm = ${f(x/100,3)} m = ${f(x/30.48,2)} ft`;
+
+  $('ratioFormula').textContent=`${f(D,1)} cm ÷ ${f(d,2)} cm = ${f(ratio,2)} : 1`;
+  $('ratioLarge').textContent=f(ratio,2);
+  $('pullLabel').textContent=f(s,2)+' cm';
+  $('travelLabel').textContent=f(x,2)+' cm';
+  $('travelBar').style.width='100%';
+  $('pullBar').style.width=(100/ratio).toFixed(4)+'%';
+
+  $('vis1').innerHTML = bailVisual(L);
+  $('vis2').innerHTML = axleVisual(d,ca);
+  $('vis3').innerHTML = spiralVisual(n);
+  $('vis4').innerHTML = wheelVisual(D,cw);
+  $('vis5').innerHTML = distanceVisual(n,cw,x,D);
+}
+
+['bail','wheel','axle'].forEach(id=>$(id).addEventListener('input',update));
+$('reset').addEventListener('click',()=>{
+  $('bail').value=20;
+  $('axle').value=5;
+  $('wheel').value=10;
+  update();
+});
+update();
+</script>
+</body>
+</html>
